@@ -7,6 +7,7 @@ import SwiftUI
 
 struct WheelView: View {
     let options: [WheelOption]
+    let theme: WheelTheme
     let rotation: Double
     let showsHint: Bool
 
@@ -15,10 +16,12 @@ struct WheelView: View {
             let size = min(geo.size.width, geo.size.height)
             let radius = size / 2
             ZStack {
-                slices(radius: radius)
-                    .rotationEffect(.degrees(rotation))
                 Circle()
-                    .strokeBorder(.white.opacity(0.25), lineWidth: 2)
+                    .fill(theme.rim)
+                    .shadow(color: .black.opacity(0.35), radius: radius * 0.04, y: radius * 0.02)
+                slices(radius: radius * 0.93)
+                    .frame(width: size * 0.93, height: size * 0.93)
+                    .rotationEffect(.degrees(rotation))
                 hub(radius: radius)
                 pointer(radius: radius)
             }
@@ -34,27 +37,24 @@ struct WheelView: View {
             ForEach(Array(options.enumerated()), id: \.element.id) { index, option in
                 let start = -90 + Double(index) * sliceDegrees
                 WheelSlice(startDegrees: start, endDegrees: start + sliceDegrees)
-                    .fill(WheelPalette.color(at: index, of: options.count))
-                WheelSlice(startDegrees: start, endDegrees: start + sliceDegrees)
-                    .stroke(.black.opacity(0.35), lineWidth: 1)
+                    .fill(theme.sliceColor(at: index, of: options.count))
                 sliceLabel(option.label, midDegrees: start + sliceDegrees / 2, radius: radius)
             }
         }
     }
 
     private func sliceLabel(_ text: String, midDegrees: Double, radius: CGFloat) -> some View {
-        let hubRadius = radius * 0.21
+        let hubRadius = radius * 0.22
         let distance = hubRadius + (radius - hubRadius) * 0.52
         let normalized = (midDegrees.truncatingRemainder(dividingBy: 360) + 360)
             .truncatingRemainder(dividingBy: 360)
         // Labels on the left half would render upside down; flip them to read inward.
         let flipped = normalized > 90 && normalized < 270
         return Text(text)
-            .font(.system(size: max(9, radius * 0.12), weight: .semibold, design: .rounded))
-            .foregroundStyle(.white)
+            .font(.system(size: max(9, radius * 0.12), weight: .bold, design: .rounded))
+            .foregroundStyle(theme.labelColor)
             .lineLimit(1)
             .minimumScaleFactor(0.5)
-            .shadow(color: .black.opacity(0.5), radius: 1)
             .frame(width: (radius - hubRadius) * 0.88)
             .rotationEffect(.degrees(flipped ? 180 : 0))
             .offset(x: distance)
@@ -64,12 +64,17 @@ struct WheelView: View {
     private func hub(radius: CGFloat) -> some View {
         ZStack {
             Circle()
-                .fill(.black)
-                .overlay(Circle().strokeBorder(.white.opacity(0.4), lineWidth: 1.5))
+                .fill(theme.rim)
+            Circle()
+                .strokeBorder(theme.background, lineWidth: radius * 0.045)
             if showsHint {
                 Text("TAP")
-                    .font(.system(size: radius * 0.14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .font(.system(size: radius * 0.11, weight: .heavy, design: .rounded))
+                    .foregroundStyle(theme.background)
+            } else {
+                Circle()
+                    .fill(theme.hubAccent)
+                    .frame(width: radius * 0.12, height: radius * 0.12)
             }
         }
         .frame(width: radius * 0.42, height: radius * 0.42)
@@ -77,10 +82,9 @@ struct WheelView: View {
 
     private func pointer(radius: CGFloat) -> some View {
         PointerShape()
-            .fill(.white)
-            .overlay(PointerShape().stroke(.black.opacity(0.5), lineWidth: 1))
-            .frame(width: radius * 0.16, height: radius * 0.2)
-            .shadow(color: .black.opacity(0.4), radius: 1, y: 1)
+            .fill(theme.rim)
+            .frame(width: radius * 0.18, height: radius * 0.22)
+            .shadow(color: .black.opacity(0.35), radius: radius * 0.015, y: radius * 0.01)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }
@@ -114,27 +118,10 @@ struct PointerShape: Shape {
     }
 }
 
-enum WheelPalette {
-    static let colors: [Color] = [
-        Color(red: 0.93, green: 0.27, blue: 0.28),
-        Color(red: 0.98, green: 0.57, blue: 0.13),
-        Color(red: 0.99, green: 0.79, blue: 0.19),
-        Color(red: 0.28, green: 0.73, blue: 0.38),
-        Color(red: 0.18, green: 0.66, blue: 0.72),
-        Color(red: 0.24, green: 0.48, blue: 0.90),
-        Color(red: 0.56, green: 0.35, blue: 0.86),
-        Color(red: 0.90, green: 0.32, blue: 0.61),
-    ]
-
-    static func color(at index: Int, of count: Int) -> Color {
-        // Keep the last slice from matching the first where the wheel wraps around.
-        if count > 1, index == count - 1, index % colors.count == 0 {
-            return colors[colors.count / 2]
-        }
-        return colors[index % colors.count]
-    }
-}
-
 #Preview {
-    WheelView(options: WheelStore.exampleOptions(), rotation: 0, showsHint: true)
+    WheelView(options: WheelStore.exampleOptions(),
+              theme: .classic,
+              rotation: 0,
+              showsHint: true)
+        .background(WheelTheme.classic.background)
 }
