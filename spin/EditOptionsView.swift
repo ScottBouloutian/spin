@@ -32,6 +32,32 @@ struct EditOptionsView: View {
                     Label("Reset to Examples", systemImage: "arrow.counterclockwise")
                 }
             }
+            Section("Theme") {
+                ForEach(WheelTheme.all) { theme in
+                    Button {
+                        store.themeID = theme.id
+                    } label: {
+                        HStack {
+                            HStack(spacing: -5) {
+                                ForEach(0..<4, id: \.self) { i in
+                                    Circle()
+                                        .fill(theme.slices[i % theme.slices.count])
+                                        .frame(width: 14, height: 14)
+                                        .overlay(Circle().stroke(theme.background, lineWidth: 1))
+                                }
+                            }
+                            Text(theme.name)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if store.themeID == theme.id {
+                                Image(systemName: "checkmark")
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.tint)
+                            }
+                        }
+                    }
+                }
+            }
         }
         .navigationTitle("Options")
         .navigationBarTitleDisplayMode(.inline)

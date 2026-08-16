@@ -25,7 +25,16 @@ final class WheelStore {
         didSet { save() }
     }
 
+    var themeID: String {
+        didSet { UserDefaults.standard.set(themeID, forKey: Self.themeKey) }
+    }
+
+    var theme: WheelTheme {
+        WheelTheme.theme(id: themeID)
+    }
+
     private static let storageKey = "wheelOptions"
+    private static let themeKey = "wheelTheme"
 
     init() {
         if let data = UserDefaults.standard.data(forKey: Self.storageKey),
@@ -35,10 +44,11 @@ final class WheelStore {
         } else {
             options = Self.exampleOptions()
         }
+        themeID = UserDefaults.standard.string(forKey: Self.themeKey) ?? WheelTheme.classic.id
     }
 
     static func exampleOptions() -> [WheelOption] {
-        ["Pizza", "Sushi", "Tacos", "Burgers", "Salad", "Ramen"].map { WheelOption(label: $0) }
+        ["Pizza", "Sushi", "Tacos", "Burgers", "Salad", "Steak"].map { WheelOption(label: $0) }
     }
 
     private func save() {
